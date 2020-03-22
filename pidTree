@@ -2,51 +2,62 @@
 
 # input validate
 if [ $1 -lt 1 ] 
-then
-	echo pid number invalid
-else
-
-Getc ()
-{
-ps --ppid $1 | awk 'NR!=1 {print $1}'
-}
-
-recursive ()
- {
-
-  echo  pid number $1
-
-  if [ $( Getc $1 | wc -l) -gt 0 ]
-    then
-      echo This are $1 childrens   
-      index=$(Getc $1)
-      for i in $index
-        do
-	  recursive $i
-	done
+	then
+		echo pid number invalid
+	else
 	
-  echo the end of $1 childrens
-  fi
+	# Gets pid and bring all his childrens
+	GetChildrens ()
+		{
+			ps --ppid $1 | awk 'NR!=1 {print $1}'
+		}		
+	
+	# Creating the tree
+	MakeTree ()
+		 {
+	  		echo  pid number $1
+			
+			# In case this pid has any childrens
+			if [ $( GetChildrens $1 | wc -l) -gt 0 ]
+    				then
+			  		echo This are $1 childrens   
+					ChildrenList=$(GetChildrens $1)
 
- }
+					for i in $ChildrenList
+						do
+	  						MakeTree $i
+						done
+	
+			echo the end of $1 childrens
 
-getParant ()
-{
-	ps j $1 | awk 'NR!=1 {print $1}'
-}
+  			fi
+	 	}
+	
+	# Getting pid father
+	GetParent ()
+		{
+			ps j $1 | awk 'NR!=1 {print $1}'
+		}
+	
+	# Throwing all the paraents to file
+	echo $1 > ParentList
 
-echo $1 > pidList
+	CurParent=`GetParent $1`
+	
+	# Runnig until the first father
+	while [ $CurParent -gt 0 ]
+		do	
+        		echo $CurParent >> ParentList
+   	 		CurParent=`GetParent $CurParent`
+		done
 
-curParant=`getParant $1`
+	# Displaying all the fathers
+	tac ParentList
 
-while [ $curParant -gt 0 ]
-do	
-   echo $curParant >> pidList
-   curParant=`getParant $curParant`
-done
+	# Creating the tree
+	MakeTree $1
 
-tac pidList
-recursive $1
-rm pidList
+	# Deleting the tmp file
+	rm ParentList
 
 fi
