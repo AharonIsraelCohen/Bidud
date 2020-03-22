@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# input validate
+if [ $1 -lt 1 ] 
+then
+	echo pid number invalid
+else
+
+Getc ()
+{
+ps --ppid $1 | awk 'NR!=1 {print $1}'
+}
+
+recursive ()
+ {
+
+  echo  pid number $1
+
+  if [ $( Getc $1 | wc -l) -gt 0 ]
+    then
+      echo This are $1 childrens   
+      index=$(Getc $1)
+      for i in $index
+        do
+	  recursive $i
+	done
+	
+  echo the end of $1 childrens
+  fi
+
+ }
+
+getParant ()
+{
+	ps j $1 | awk 'NR!=1 {print $1}'
+}
+
+echo $1 > pidList
+
+curParant=`getParant $1`
+
+while [ $curParant -gt 0 ]
+do	
+   echo $curParant >> pidList
+   curParant=`getParant $curParant`
+done
+
+tac pidList
+recursive $1
+rm pidList
+
+fi
