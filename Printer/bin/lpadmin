@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Check if the printer name allready taken
+set -x
+if [ -d ../spool/$2 ]
+	then
+		echo the printer name his allready in user
+	else
+		cp -r ../spool/tamplate ../spool/$2
+fi
