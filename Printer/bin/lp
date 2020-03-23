@@ -1,17 +1,24 @@
 #!/bin/bash
 
+SpoolPath=/software/Bidud/Printer/spool
+
+Printer=default
+
+# Getting the first chracter
+FirstCharacter=`echo $1 | cut -c 1`
+
 function PrintLine ()
 {
 	# Check whter the line is clearןכ 
 	echo $Printer
-	if [ -f ../spool/$Printer/enable ] 
+	if [ -f $SpoolPath/$Printer/enable ] 
 		then
 			
 		# Check if there are no files
 		if [ -z $1 ] 
 			then
 				text=""
-				echo please enter your test
+				echo please enter your text
 				read text
 				Line $text
 
@@ -19,7 +26,13 @@ function PrintLine ()
 		else 
 			for file in $@
 				do
-					ls -l $file
+					# Check if the files exist
+					if [ -f $file ]
+					then
+						Line $(cat $file)
+					else
+						echo The $file dont exist
+					fi
 				done
 		fi
 
@@ -30,18 +43,13 @@ function PrintLine ()
 
 function Line ()
 {
-	currCount=$(( $(cat ../spool/$Printer/count) + 1 ))
-        touch ../spool/$Printer/R$currCount
-        echo $1 > ../spool/$Printer/R$currCount
-        echo $currCount > ../spool/$Printer/count
+	echo $@
+	currCount=$(( $(cat $SpoolPath/$Printer/count) + 1 ))
+        touch $SpoolPath/$Printer/R$currCount
+        echo $@ > $SpoolPath/$Printer/R$currCount
+        echo $currCount > $SpoolPath/$Printer/count
 }
 
-
-
-# Getting the first chracter
-Printer=default
-
-FirstCharacter=`echo $1 | cut -c 1`
 
 # Checking what printer to activate
 if [ $FirstCharacter == "-" ]
@@ -50,7 +58,7 @@ if [ $FirstCharacter == "-" ]
 		# Getting the printer name
 		printerName=`echo $1 | sed 's/^.//'`
 
-		if [ -d ../spool/$printerName ]
+		if [ -d $SpoolPath/$printerName ]
 			then	
 				# Declearing the printer and Taking off the printer name from the input
 				Printer=$printerName
@@ -63,7 +71,7 @@ if [ $FirstCharacter == "-" ]
 
 	else
 		# Checking if there is a default printer
-		if [ -e ../spool/default ]
+		if [ -e $SpoolPath/default ]
 			then
 				PrintLine $@
 			else

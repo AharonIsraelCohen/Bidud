@@ -1,16 +1,24 @@
 #!/bin/bash
 
+SpoolPath=/software/Bidud/Printer/spool
+
 function DisplayPrinter ()
 {
 	# Print the printer name
         echo $1
+	
+	# Check if there are any files
+	if [ -f $SpoolPath/$1/R1 ]
+		then
+		        # Displaying all of the printer work
+        		for i in $SpoolPath/$1/R*
 
-        # Displaying all of the printer work
-        for i in ../spool/$1/R*
-
-        	do
-     	        	cat $i
-                done
+        			do
+     	        			cat $i
+	                	done
+		else
+			echo there are no files to print
+	fi
 }
 
 # Check wheter to run on all printers or just one
@@ -18,7 +26,7 @@ if [ "$1" == "-all" ]
 
 	then
 
-		cd ../spool/
+		cd $SpoolPath
 		for printer in *
 
 			do
@@ -31,7 +39,7 @@ if [ "$1" == "-all" ]
 			done
 	else
 		# Check if the printer exist
-		if [ -d ../spool/$1 ]
+		if [ -d $SpoolPath/$1 ]
 
 			then
 				DisplayPrinter $1

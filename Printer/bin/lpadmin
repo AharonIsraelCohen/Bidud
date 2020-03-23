@@ -1,52 +1,53 @@
 #!/bin/bash
 
 # Checks which command we need to perfoem
+SpoolPath=/software/Bidud/Printer/spool
+TampPath=/software/Bidud/Printer/tamplate
+
 case $1 in
 
 	-add)
 
 		# Check if the printer name allready taken
-		if [ -d ../spool/$2 ]
+		if [ -d $Path/$2 ]
 			then
 				echo the printer name his allready in use
 			else
-				cp -r ../tamplate ../spool/$2
+				cp -r $TampPath  $SpoolPath/$2
 		fi
 	;;
 	
 	-del)
-		rm -rf ../spool/$2
+		rm -rf $SpoolPath/$2
 		
 		# Checking if there is a soft link for defult
-		if [ -h ../spool/default ]
+		if [ -h $SpoolPath/default ]
 			then
-				if [ ! -e ../spool/default ]
+				if [ ! -e $SpoolPath/default ]
 					then
-						unlink ../spool/default
+						unlink $SpoolPath/default
 				fi
 		fi
 	;;
 	
 	-enable)
-		touch ../spool/$2/enable\
-		# Not Finished
+		touch $SpoolPath/$2/enable
 	;;
 	
 	-disable)
-		rm ../spool/$2/enable
-		# Not Finished
+		rm $SpoolPath/$2/enable
 	;;
 
 	-default)
 		# Check that we allready have this printer
-		if [ -d ../spool/$2 ]
+		if [ -d $SpoolPath/$2 ]
 			then
 				# Check i the sift link allready exists
-				if [ -h ../spool/default ]
+				if [ -h $SpoolPath/default ]
 					then
-						unlink ../spool/default
+						unlink $SpoolPath/default
 				fi
-				ln -s ../spool/$2 ../spool/default
+				ln -s $SpoolPath/$2 $SpoolPath/default
 			else
 				echo We dont have such printer
 		fi
