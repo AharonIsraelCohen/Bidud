@@ -5,16 +5,19 @@ SpoolPath=/software/Bidud/Printer/spool
 function DisplayPrinter ()
 {
 	# Print the printer name
-        echo $1
+	echo; echo $1; echo
 	
 	# Check if there are any files
 	if [ -f $SpoolPath/$1/R1 ]
 		then
 		        # Displaying all of the printer work
-        		for i in $SpoolPath/$1/R*
+			cd $SpoolPath/$1
+        		for i in R*
 
         			do
-     	        			cat $i
+     	        			echo $i
+					cat $i
+					echo
 	                	done
 		else
 			echo there are no files to print
