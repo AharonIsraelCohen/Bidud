@@ -1,10 +1,58 @@
 #!/bin/bash
 
-# Check if the printer name allready taken
-set -x
-if [ -d ../spool/$2 ]
-	then
-		echo the printer name his allready in user
-	else
-		cp -r ../spool/tamplate ../spool/$2
-fi
+# Checks which command we need to perfoem
+case $1 in
+
+	-add)
+
+		# Check if the printer name allready taken
+		if [ -d ../spool/$2 ]
+			then
+				echo the printer name his allready in use
+			else
+				cp -r ../tamplate ../spool/$2
+		fi
+	;;
+	
+	-del)
+		rm -rf ../spool/$2
+		
+		# Checking if there is a soft link for defult
+		if [ -h ../spool/default ]
+			then
+				if [ ! -e ../spool/default ]
+					then
+						unlink ../spool/default
+				fi
+		fi
+	;;
+	
+	-enable)
+		touch ../spool/$2/enable\
+		# Not Finished
+	;;
+	
+	-disable)
+		rm ../spool/$2/enable
+		# Not Finished
+	;;
+
+	-default)
+		# Check that we allready have this printer
+		if [ -d ../spool/$2 ]
+			then
+				# Check i the sift link allready exists
+				if [ -h ../spool/default ]
+					then
+						unlink ../spool/default
+				fi
+				ln -s ../spool/$2 ../spool/default
+			else
+				echo We dont have such printer
+		fi
+	;;
+
+	*)
+	       	echo we dont have such command 
+	;;
+esac

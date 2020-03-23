@@ -1,1 +1,73 @@
 #!/bin/bash
+
+function PrintLine ()
+{
+	# Check whter the line is clearןכ 
+	echo $Printer
+	if [ -f ../spool/$Printer/enable ] 
+		then
+			
+		# Check if there are no files
+		if [ -z $1 ] 
+			then
+				text=""
+				echo please enter your test
+				read text
+				Line $text
+
+		# IF there are files
+		else 
+			for file in $@
+				do
+					ls -l $file
+				done
+		fi
+
+	else
+	       echo The printer line is disbled 	
+	fi
+}
+
+function Line ()
+{
+	currCount=$(( $(cat ../spool/$Printer/count) + 1 ))
+        touch ../spool/$Printer/R$currCount
+        echo $1 > ../spool/$Printer/R$currCount
+        echo $currCount > ../spool/$Printer/count
+}
+
+
+
+# Getting the first chracter
+Printer=default
+
+FirstCharacter=`echo $1 | cut -c 1`
+
+# Checking what printer to activate
+if [ $FirstCharacter == "-" ]
+
+	then
+		# Getting the printer name
+		printerName=`echo $1 | sed 's/^.//'`
+
+		if [ -d ../spool/$printerName ]
+			then	
+				# Declearing the printer and Taking off the printer name from the input
+				Printer=$printerName
+				Input=`echo $@ | sed 's/[^ ]* *//'`
+				PrintLine $Input
+
+			else
+				echo the printer not exsit
+		fi
+
+	else
+		# Checking if there is a default printer
+		if [ -e ../spool/default ]
+			then
+				PrintLine $@
+			else
+				pwd
+				echo there is no default printer, use lpadmin -default printer_name to set one
+		fi
+fi

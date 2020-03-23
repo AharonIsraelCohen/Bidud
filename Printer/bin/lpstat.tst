@@ -17,20 +17,18 @@ function DisplayPrinter ()
 if [ "$1" == "-all" ]
 
 	then
-
 		cd ../spool/
 		for printer in *
 
 			do
-				# Check if its not the softlink
 				if [ ! -h $printer ]
 
 					then
 						DisplayPrinter $printer
+						#echo $printer
 				fi
 			done
 	else
-		# Check if the printer exist
 		if [ -d ../spool/$1 ]
 
 			then
