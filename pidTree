@@ -1,63 +1,75 @@
 #!/bin/bash
 
-# input validate
-if [ $1 -lt 1 ] 
-	then
-		echo pid number invalid
-	else
+# Var to hold all parents
+ParentList=""
+
+ChildrenSign=""
+
+# Gets pid and bring all his childrens
+GetChildrens ()
+{
+	ps --ppid $1 | awk 'NR!=1 {print $1}'
+}
+
+
+# Creating the tree
+MakeTree ()
+{
+	echo $ChildrenSign$1
+
+        # In case this pid has any childrens
+        if [ $( GetChildrens $1 | wc -l) -gt 0 ]
+        then
+        	#echo This are $1 childrens
+		ChildrenSign="$ChildrenSign-"
+                ChildrenList=$(GetChildrens $1)
+
+                for i in $ChildrenList
+                do
+                	MakeTree $i
+                done
+
+        	#echo the end of $1 childrens
+		ChildrenSign=$(echo $ChildrenSign | sed 's/^.//')
+
+        fi
+}
+
+# Getting pid father
+GetParent ()
+{
+	ps j $1 | awk 'NR!=1 {print $1}'
+}
+
+function PidHandle ()
+{
+
+        # Putting the first PID to parents var
+        CurParent=`GetParent $1`
+	ParentSign=""
+
+        # Runnig until the first father
+        while [ $CurParent -gt 0 ]
+                do
+                        ParentList="$CurParent $ParentList"
+			ParentSign="$ParentSign+"
+                        CurParent=`GetParent $CurParent`
+                done
+	echo
+        # Displaying all the fathers
+        for Parent in $ParentList
+        do
+
+                echo $ParentSign$Parent
+		ParentSign=$(echo $ParentSign | sed 's/^.//')
+        done
 	
-	# Gets pid and bring all his childrens
-	GetChildrens ()
-		{
-			ps --ppid $1 | awk 'NR!=1 {print $1}'
-		}		
-	
-	# Creating the tree
-	MakeTree ()
-		 {
-	  		echo  pid number $1
-			
-			# In case this pid has any childrens
-			if [ $( GetChildrens $1 | wc -l) -gt 0 ]
-    				then
-			  		echo This are $1 childrens   
-					ChildrenList=$(GetChildrens $1)
+        # Creating the tree
+        MakeTree $1
 
-					for i in $ChildrenList
-						do
-	  						MakeTree $i
-						done
-	
-			echo the end of $1 childrens
+}
 
-  			fi
-	 	}
-	
-	# Getting pid father
-	GetParent ()
-		{
-			ps j $1 | awk 'NR!=1 {print $1}'
-		}
-	
-	# Throwing all the paraents to file
-	echo $1 > ParentList
+# Checking if the command works it will execute the function other wise will throw arror message
+ps --pid $1 &> /dev/null && PidHandle $1 || echo Bad input, pid must be a number grather then 0, and some process that exsit
 
-	CurParent=`GetParent $1`
-	
-	# Runnig until the first father
-	while [ $CurParent -gt 0 ]
-		do	
-        		echo $CurParent >> ParentList
-   	 		CurParent=`GetParent $CurParent`
-		done
 
-	# Displaying all the fathers
-	tac ParentList
-
-	# Creating the tree
-	MakeTree $1
-
-	# Deleting the tmp file
-	rm ParentList
-
-fi
