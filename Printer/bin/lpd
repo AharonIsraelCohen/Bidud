@@ -1,1 +1,32 @@
 #!/bin/bash
+#set -x
+while [ -f $1/enable ] 
+
+do
+	CurPrintCount=$(cat $1/PrintCount)
+	CurCount=$(cat $1/count)
+
+	#echo $CurPrintCount
+	#echo $CurCount
+
+	if [ $CurPrintCount -lt $CurCount ] 
+	then
+		CurPrintCount=$(($CurPrintCount + 1))
+		
+		if [ -f $1/D$CurPrintCount ]
+		then
+			cat $1/D$CurPrintCount >> $1/log
+			echo "***********************" >> $1/log
+			SleepingTime=$(cat $1/D$CurPrintCount | wc -l)
+			echo the sleeping time needs to be $SleepingTime
+			sleep $SleepingTime
+		fi
+
+		echo $CurPrintCount > $1/PrintCount
+
+	else
+		sleep 15
+	fi
+
+done
+

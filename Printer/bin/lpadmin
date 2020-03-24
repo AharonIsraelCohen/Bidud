@@ -31,7 +31,15 @@ case $1 in
 	;;
 	
 	-enable)
-		touch $SpoolPath/$2/enable
+		if [ ! -f $SpoolPath/$2/enable ]
+		then
+
+			touch $SpoolPath/$2/enable
+			nohup lpd $SpoolPath/$2 &> /dev/null &
+			exit
+		else 
+			echo this printer allready enabled
+		fi
 	;;
 	
 	-disable)

@@ -5,6 +5,18 @@ SpoolPath=/software/Bidud/Printer/spool
 # Getting the first chracter
 FirstCharacter=`echo $1 | cut -c 1`
 
+DeleteFiles ()
+{
+	set -x
+	if [[ -f $SpoolPath/$1/R$2 && -f $SpoolPath/$1/D$2 ]]
+        then
+        	rm $SpoolPath/$1/R$2 $SpoolPath/$1/D$2
+	else        
+                echo There is no such files $2 to delete
+        fi
+
+}
+
 # Checking what printer to activate
 if [ $FirstCharacter == "-" ]
 
@@ -14,17 +26,7 @@ if [ $FirstCharacter == "-" ]
 
 		if [ -d $SpoolPath/$printerName ]
 			then	
-				# Declearing the printer and Taking off the printer name from the input
-				#Printer=$printerName
-				#Input=`echo $@ | sed 's/[^ ]* *//'`
-				#PrintLine $Input
-				if [ -f $SpoolPath/$printerName/R$2 ]
-				then
-					rm $SpoolPath/$printerName/R$2
-				else
-					echo there is no such file to delete
-				fi
-
+				DeleteFiles $printerName $2
 			else
 				echo the printer not exsit
 		fi
@@ -33,12 +35,7 @@ if [ $FirstCharacter == "-" ]
 		# Checking if there is a default printer
 		if [ -e $SpoolPath/default ]
 			then
-				if [ -f $SpoolPath/default/R$1 ]
-                                then
-                                        rm $SpoolPath/default/R$1
-                                else
-                                        echo there is no such file to delete
-                                fi
+				DeleteFiles default $1
 			else
 				echo there is no default printer, use lpadmin -default printer_name to set one
 		fi

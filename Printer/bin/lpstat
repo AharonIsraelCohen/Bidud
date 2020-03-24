@@ -5,7 +5,7 @@ SpoolPath=/software/Bidud/Printer/spool
 function DisplayPrinter ()
 {
 	# Print the printer name
-	echo; echo $1; echo
+	echo; echo "The printer name is $1"; echo
 	
 	# Check if there are any files
 	if [ -f $SpoolPath/$1/R1 ]

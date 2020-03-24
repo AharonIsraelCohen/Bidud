@@ -20,7 +20,7 @@ function PrintLine ()
 				text=""
 				echo please enter your text
 				read text
-				Line $text
+				Line input $text 
 
 		# IF there are files
 		else 
@@ -29,7 +29,7 @@ function PrintLine ()
 					# Check if the files exist
 					if [ -f $file ]
 					then
-						Line $(cat $file)
+						Line $file
 					else
 						echo The $file dont exist
 					fi
@@ -43,11 +43,27 @@ function PrintLine ()
 
 function Line ()
 {
-	echo $@
+	UserName=$(whoami)
 	currCount=$(( $(cat $SpoolPath/$Printer/count) + 1 ))
-        touch $SpoolPath/$Printer/R$currCount
-        echo $@ > $SpoolPath/$Printer/R$currCount
+        touch $SpoolPath/$Printer/D$currCount
+	touch $SpoolPath/$Printer/R$currCount
+
+	echo "File count: $currCount" > $SpoolPath/$Printer/R$currCount
+	echo "User name: $UserName" >> $SpoolPath/$Printer/R$currCount
+	
+	# Check if its text or file
+	if [ "$1" == "input" ]
+	then
+		echo $1 > $SpoolPath/$Printer/D$currCount
+	else
+		cat $1 > $SpoolPath/$Printer/D$currCount
+	fi
+
+	FileSize=$(ls -lh $SpoolPath/$Printer/D$currCount | awk '{print$5}')
+	echo "File size: $FileSize" >> $SpoolPath/$Printer/R$currCount
+	echo "File name: $1" >> $SpoolPath/$Printer/R$currCount
         echo $currCount > $SpoolPath/$Printer/count
+	
 }
 
 
