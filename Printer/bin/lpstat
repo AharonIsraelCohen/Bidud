@@ -3,51 +3,49 @@
 SpoolPath=/software/Bidud/Printer/spool
 
 function DisplayPrinter ()
-{
-	# Print the printer name
-	echo; echo "The printer name is $1"; echo
+{	
+	# If there is no input
+	if [ -z $1 ]
+	then
+		echo "You must enter printer name"
+	else
+		printf "\n The printer name is $1 \n"
 	
-	# Check if there are any files
-	if [ -f $SpoolPath/$1/R1 ]
+		# Check if there are any files
+		if [ -f $SpoolPath/$1/R1 ]
 		then
-		        # Displaying all of the printer work
+        		# Displaying all of the printer work
 			cd $SpoolPath/$1
-        		for i in R*
-
-        			do
-     	        			echo $i
-					cat $i
-					echo
-	                	done
-		else
-			echo there are no files to print
+	       		for work in R*
+  			do
+             			echo $work
+				cat $work
+				echo
+        		done
+		fi
 	fi
 }
 
 # Check wheter to run on all printers or just one
 if [ "$1" == "-all" ]
-
-	then
-
-		cd $SpoolPath
-		for printer in *
-
-			do
-				# Check if its not the softlink
-				if [ ! -h $printer ]
-
-					then
-						DisplayPrinter $printer
-				fi
-			done
-	else
-		# Check if the printer exist
-		if [ -d $SpoolPath/$1 ]
-
-			then
-				DisplayPrinter $1
-			else
-				echo we dont have such printer
-
+then
+	# Going to the  printer dir
+	cd $SpoolPath
+	for printer in *
+	do
+		# Check if its not the softlink, we dont want to this twice
+		if [ ! -h $printer ]
+		then
+			# Sending to the display function the curr printer
+			DisplayPrinter $printer
 		fi
+	done
+else
+	# Check if the printer exist
+	if [ -d $SpoolPath/$1 ]
+	then
+		DisplayPrinter $1
+	else
+		echo We dont have such printer
+	fi
 fi

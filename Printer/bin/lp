@@ -9,31 +9,27 @@ FirstCharacter=`echo $1 | cut -c 1`
 
 function PrintLine ()
 {
-	# Check whter the line is clearןכ 
-	echo $Printer
+	# Check whter the line is enabled 
 	if [ -f $SpoolPath/$Printer/enable ] 
-		then
-			
+	then		
 		# Check if there are no files
 		if [ -z $1 ] 
-			then
-				text=""
-				echo please enter your text
-				read text
-				Line input $text 
-
-		# IF there are files
+		then
+			text=""
+			echo Please enter your text
+			read text
+			Line input $text 
 		else 
 			for file in $@
-				do
-					# Check if the files exist
-					if [ -f $file ]
-					then
-						Line $file
-					else
-						echo The $file dont exist
-					fi
-				done
+			do
+				# Check if the files exist
+				if [ -f $file ]
+				then
+					Line $file
+				else
+					echo The $file dont exist
+				fi
+			done
 		fi
 
 	else
@@ -43,14 +39,13 @@ function PrintLine ()
 
 function Line ()
 {
-	UserName=$(whoami)
+	# The curr count file number
 	currCount=$(( $(cat $SpoolPath/$Printer/count) + 1 ))
+
+	# Creating R & D files
         touch $SpoolPath/$Printer/D$currCount
 	touch $SpoolPath/$Printer/R$currCount
 
-	echo "File count: $currCount" > $SpoolPath/$Printer/R$currCount
-	echo "User name: $UserName" >> $SpoolPath/$Printer/R$currCount
-	
 	# Check if its text or file
 	if [ "$1" == "input" ]
 	then
@@ -59,9 +54,16 @@ function Line ()
 		cat $1 > $SpoolPath/$Printer/D$currCount
 	fi
 
+	# Getting file size and user name
 	FileSize=$(ls -lh $SpoolPath/$Printer/D$currCount | awk '{print$5}')
+	UserName=$(whoami)
+
+        echo "File count: $currCount" > $SpoolPath/$Printer/R$currCount
+        echo "User name: $UserName" >> $SpoolPath/$Printer/R$currCount
 	echo "File size: $FileSize" >> $SpoolPath/$Printer/R$currCount
 	echo "File name: $1" >> $SpoolPath/$Printer/R$currCount
+	
+	# Updating the count file number
         echo $currCount > $SpoolPath/$Printer/count
 	
 }
@@ -69,29 +71,26 @@ function Line ()
 
 # Checking what printer to activate
 if [ $FirstCharacter == "-" ]
+then
+	# Getting the printer name
+	printerName=`echo $1 | sed 's/^.//'`
 
-	then
-		# Getting the printer name
-		printerName=`echo $1 | sed 's/^.//'`
-
-		if [ -d $SpoolPath/$printerName ]
-			then	
-				# Declearing the printer and Taking off the printer name from the input
-				Printer=$printerName
-				Input=`echo $@ | sed 's/[^ ]* *//'`
-				PrintLine $Input
-
-			else
-				echo the printer not exsit
-		fi
-
+	if [ -d $SpoolPath/$printerName ]
+	then	
+		#Declearing the printer and Taking off the printer name from the input
+		Printer=$printerName
+		Input=`echo $@ | sed 's/[^ ]* *//'`
+		PrintLine $Input
 	else
-		# Checking if there is a default printer
-		if [ -e $SpoolPath/default ]
-			then
-				PrintLine $@
-			else
-				pwd
-				echo there is no default printer, use lpadmin -default printer_name to set one
-		fi
+		echo The printer not exsit
+	fi
+
+else
+	# Checking if there is a default printer
+	if [ -e $SpoolPath/default ]
+	then
+		PrintLine $@
+	else
+		echo There is no default printer, use lpadmin -default printer_name to set one
+	fi
 fi

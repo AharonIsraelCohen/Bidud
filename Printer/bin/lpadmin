@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# Checks which command we need to perfoem
 SpoolPath=/software/Bidud/Printer/spool
 TampPath=/software/Bidud/Printer/tamplate
 
@@ -10,10 +9,10 @@ case $1 in
 
 		# Check if the printer name allready taken
 		if [ -d $Path/$2 ]
-			then
-				echo the printer name his allready in use
-			else
-				cp -r $TampPath  $SpoolPath/$2
+		then
+			echo The printer name his allready in use
+		else
+			cp -r $TampPath  $SpoolPath/$2
 		fi
 	;;
 	
@@ -22,23 +21,24 @@ case $1 in
 		
 		# Checking if there is a soft link for defult
 		if [ -h $SpoolPath/default ]
+		then
+			if [ ! -e $SpoolPath/default ]
 			then
-				if [ ! -e $SpoolPath/default ]
-					then
-						unlink $SpoolPath/default
-				fi
+				unlink $SpoolPath/default
+			fi
 		fi
 	;;
 	
 	-enable)
 		if [ ! -f $SpoolPath/$2/enable ]
 		then
-
 			touch $SpoolPath/$2/enable
+
+			# Sending the lpd command the directory of the enabled dir
 			nohup lpd $SpoolPath/$2 &> /dev/null &
 			exit
 		else 
-			echo this printer allready enabled
+			echo This printer allready enabled
 		fi
 	;;
 	
@@ -49,15 +49,16 @@ case $1 in
 	-default)
 		# Check that we allready have this printer
 		if [ -d $SpoolPath/$2 ]
+		then
+			# Check i the sift link allready exists
+			if [ -h $SpoolPath/default ]
 			then
-				# Check i the sift link allready exists
-				if [ -h $SpoolPath/default ]
-					then
-						unlink $SpoolPath/default
-				fi
-				ln -s $SpoolPath/$2 $SpoolPath/default
-			else
-				echo We dont have such printer
+				unlink $SpoolPath/default
+			fi
+
+			ln -s $SpoolPath/$2 $SpoolPath/default
+		else
+			echo We dont have such printer
 		fi
 	;;
 

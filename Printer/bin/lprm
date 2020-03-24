@@ -7,7 +7,7 @@ FirstCharacter=`echo $1 | cut -c 1`
 
 DeleteFiles ()
 {
-	set -x
+	# In case the files exist
 	if [[ -f $SpoolPath/$1/R$2 && -f $SpoolPath/$1/D$2 ]]
         then
         	rm $SpoolPath/$1/R$2 $SpoolPath/$1/D$2
@@ -19,24 +19,23 @@ DeleteFiles ()
 
 # Checking what printer to activate
 if [ $FirstCharacter == "-" ]
+then
+	# Getting the printer name
+	printerName=`echo $1 | sed 's/^.//'`
 
-	then
-		# Getting the printer name
-		printerName=`echo $1 | sed 's/^.//'`
-
-		if [ -d $SpoolPath/$printerName ]
-			then	
-				DeleteFiles $printerName $2
-			else
-				echo the printer not exsit
-		fi
-
+	if [ -d $SpoolPath/$printerName ]
+	then	
+		DeleteFiles $printerName $2
 	else
-		# Checking if there is a default printer
-		if [ -e $SpoolPath/default ]
-			then
-				DeleteFiles default $1
-			else
-				echo there is no default printer, use lpadmin -default printer_name to set one
-		fi
+		echo The printer not exsit
+	fi
+
+else
+	# Checking if there is a default printer
+	if [ -e $SpoolPath/default ]
+	then
+		DeleteFiles default $1
+	else
+		echo There is no default printer, use lpadmin -default printer_name to set one
+	fi
 fi
