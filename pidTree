@@ -3,6 +3,8 @@
 # Var to hold all parents
 ParentList=""
 
+ChildrenSign=""
+
 # Gets pid and bring all his childrens
 GetChildrens ()
 {
@@ -13,12 +15,13 @@ GetChildrens ()
 # Creating the tree
 MakeTree ()
 {
-	echo  pid number $1
+	echo $ChildrenSign$1
 
         # In case this pid has any childrens
         if [ $( GetChildrens $1 | wc -l) -gt 0 ]
         then
-        	echo This are $1 childrens
+        	#echo This are $1 childrens
+		ChildrenSign="$ChildrenSign-"
                 ChildrenList=$(GetChildrens $1)
 
                 for i in $ChildrenList
@@ -26,7 +29,8 @@ MakeTree ()
                 	MakeTree $i
                 done
 
-        	echo the end of $1 childrens
+        	#echo the end of $1 childrens
+		ChildrenSign=$(echo $ChildrenSign | sed 's/^.//')
 
         fi
 }
@@ -42,26 +46,30 @@ function PidHandle ()
 
         # Putting the first PID to parents var
         CurParent=`GetParent $1`
+	ParentSign=""
 
         # Runnig until the first father
         while [ $CurParent -gt 0 ]
                 do
                         ParentList="$CurParent $ParentList"
+			ParentSign="$ParentSign+"
                         CurParent=`GetParent $CurParent`
                 done
-
+	echo
         # Displaying all the fathers
         for Parent in $ParentList
         do
-                echo $Parent
-        done
 
+                echo $ParentSign$Parent
+		ParentSign=$(echo $ParentSign | sed 's/^.//')
+        done
+	
         # Creating the tree
         MakeTree $1
 
 }
 
 # Checking if the command works it will execute the function other wise will throw arror message
-ps --pid $1 2> /dev/null && PidHandle $1 || echo Bad input, pid must be a number grather then 0, and some process that exsit
+ps --pid $1 &> /dev/null && PidHandle $1 || echo Bad input, pid must be a number grather then 0, and some process that exsit
 
 
