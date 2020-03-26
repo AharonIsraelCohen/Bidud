@@ -1,39 +1,42 @@
 #!/bin/bash
 
-SpoolPath=/software/Bidud/Printer/spool
-
+SpoolPath=$(realpath ../spool)
 Printer=default
 
 # Getting the first chracter
-FirstCharacter=`echo $1 | cut -c 1`
 
 function PrintLine ()
 {
-	# Check whter the line is enabled 
-	if [ -f $SpoolPath/$Printer/enable ] 
-	then		
-		# Check if there are no files
-		if [ -z $1 ] 
-		then
-			text=""
-			echo Please enter your text
-			read text
-			Line input $text 
-		else 
-			for file in $@
-			do
-				# Check if the files exist
-				if [ -f $file ]
-				then
-					Line $file
-				else
-					echo The $file dont exist
-				fi
-			done
-		fi
+	if [ -d $SpoolPath/$Printer ]
+        then
+		# Check whter the line is enabled 
+		if [ -f $SpoolPath/$Printer/enable ] 
+		then		
+			# Check if there are no files
+			if [ -z $1 ] 
+			then
+				text=""
+				echo Please enter your text
+				read text
+				Line input $text 
+			else 
+				for file in $@
+				do
+					# Check if the files exist
+					if [ -f $file ]
+					then
+						Line $file
+					else
+						echo The $file file dont exist
+					fi
+				done
+			fi
 
+		else
+		       echo The printer $Printer is disbled 	
+		fi
 	else
-	       echo The printer line is disbled 	
+		echo The $Printer printer is not exist
 	fi
 }
 
@@ -68,29 +71,41 @@ function Line ()
 	
 }
 
-
-# Checking what printer to activate
-if [ $FirstCharacter == "-" ]
-then
-	# Getting the printer name
-	printerName=`echo $1 | sed 's/^.//'`
-
-	if [ -d $SpoolPath/$printerName ]
-	then	
-		#Declearing the printer and Taking off the printer name from the input
-		Printer=$printerName
-		Input=`echo $@ | sed 's/[^ ]* *//'`
-		PrintLine $Input
-	else
-		echo The printer not exsit
-	fi
-
-else
-	# Checking if there is a default printer
+function Default ()
+{
 	if [ -e $SpoolPath/default ]
+        	then
+                	PrintLine $@
+        	else
+                	echo There is no default printer, use lpadmin -default printer_name to set one
+        fi
+}
+
+# Check that there is at list more then 1 argumant
+if [ $# -eq 0 ]
+then
+	Default
+else
+	
+	FirstCharacter=`echo $1 | cut -c 1`
+
+	# Checking what printer to activate
+	if [ $FirstCharacter == "-" ]
 	then
-		PrintLine $@
+		# Getting the printer name
+		printerName=`echo $1 | sed 's/^.//'`
+
+		if [ -d $SpoolPath/$printerName ]
+		then	
+			#Declearing the printer and Taking off the printer name from the input
+			Printer=$printerName
+			Input=`echo $@ | sed 's/[^ ]* *//'`
+			PrintLine $Input
+		else
+			echo The printer not exsit
+		fi
+
 	else
-		echo There is no default printer, use lpadmin -default printer_name to set one
+		Default
 	fi
 fi

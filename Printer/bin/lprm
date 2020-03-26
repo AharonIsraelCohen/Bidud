@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SpoolPath=/software/Bidud/Printer/spool
+SpoolPath=$(realpath ../spool)
 
 # Getting the first chracter
 FirstCharacter=`echo $1 | cut -c 1`
@@ -17,25 +17,40 @@ DeleteFiles ()
 
 }
 
-# Checking what printer to activate
-if [ $FirstCharacter == "-" ]
+# Check if there is no argumant
+if [ $# -eq 0 ]
 then
-	# Getting the printer name
-	printerName=`echo $1 | sed 's/^.//'`
+	echo You must enter a least 1 argumant
+else	
+	FirstCharacter=`echo $1 | cut -c 1`
 
-	if [ -d $SpoolPath/$printerName ]
-	then	
-		DeleteFiles $printerName $2
-	else
-		echo The printer not exsit
-	fi
-
-else
-	# Checking if there is a default printer
-	if [ -e $SpoolPath/default ]
+	# Checking what printer to activate
+	if [ $FirstCharacter == "-" ]
 	then
-		DeleteFiles default $1
+		# Check that there is argumant for the file deletion
+		if [ $# -gt 1 ]
+		then
+
+			# Getting the printer name
+			printerName=`echo $1 | sed 's/^.//'`
+
+			if [ -d $SpoolPath/$printerName ]
+			then	
+				DeleteFiles $printerName $2
+			else
+				echo The printer not exsit
+			fi
+		else
+			echo You must enter file number to delete
+		fi
+
 	else
-		echo There is no default printer, use lpadmin -default printer_name to set one
+		# Checking if there is a default printer
+		if [ -e $SpoolPath/default ]
+		then
+			DeleteFiles default $1
+		else
+			echo There is no default printer, use lpadmin -default printer_name to set one
+		fi
 	fi
 fi

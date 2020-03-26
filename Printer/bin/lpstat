@@ -1,6 +1,6 @@
 #!/bin/bash
 
-SpoolPath=/software/Bidud/Printer/spool
+SpoolPath=$(realpath ../spool)
 
 function DisplayPrinter ()
 {	
@@ -9,11 +9,11 @@ function DisplayPrinter ()
 	then
 		echo "You must enter printer name"
 	else
-		printf "\n The printer name is $1 \n"
-	
 		# Check if there are any files
 		if [ -f $SpoolPath/$1/R1 ]
 		then
+	                printf "\n The printer name is $1 \n"
+
         		# Displaying all of the printer work
 			cd $SpoolPath/$1
 	       		for work in R*
@@ -22,6 +22,9 @@ function DisplayPrinter ()
 				cat $work
 				echo
         		done
+		else
+			echo There is nothing to display for $1 printer
+
 		fi
 	fi
 }
