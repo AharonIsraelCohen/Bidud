@@ -1,7 +1,8 @@
 #!/bin/bash
 
-SpoolPath=$(realpath ../spool)
-TampPath=$(realpath ../tamplate)
+ScriptPath=$(dirname $0)
+SpoolPath="${ScriptPath%???}spool"
+TampPath="${ScriptPath%???}tamplate"
 
 # Check that the user entered 2 argumants
 if [ $# -eq 1 ] 
@@ -16,11 +17,10 @@ else
 	case $1 in
 
 		-add)
-			echo you in the add case
 			# Check if the printer name allready taken
 			if [ -d $SpoolPath/$2 ]
 			then
-				echo This printer all exist
+				echo This printer allready exist
 			else
 				cp -r $TampPath  $SpoolPath/$2
 			fi

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SpoolPath=$(realpath ../spool)
+ScriptPath=$(dirname $0)
+SpoolPath="${ScriptPath%???}spool"
 
 # Getting the first chracter
 FirstCharacter=`echo $1 | cut -c 1`

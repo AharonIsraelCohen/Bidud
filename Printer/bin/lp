@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SpoolPath=$(realpath ../spool)
+ScriptPath=$(dirname $0)
+SpoolPath="${ScriptPath%???}spool"
 Printer=default
 
 # Getting the first chracter

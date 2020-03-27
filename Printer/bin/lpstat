@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SpoolPath=$(realpath ../spool)
+ScriptPath=$(dirname $0)
+SpoolPath="${ScriptPath%???}spool"
 
 function DisplayPrinter ()
 {	
@@ -10,7 +11,7 @@ function DisplayPrinter ()
 		echo "You must enter printer name"
 	else
 		# Check if there are any files
-		if [ -f $SpoolPath/$1/R1 ]
+		if ls -l $SpoolPath/$1 | grep R
 		then
 	                printf "\n The printer name is $1 \n"
 
