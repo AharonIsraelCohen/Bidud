@@ -107,6 +107,6 @@ else
 		fi
 
 	else
-		Default
+		Default $@
 	fi
 fi
