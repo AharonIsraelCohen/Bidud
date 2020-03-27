@@ -1,0 +1,9 @@
+# You mast add the printer dir to your path, and the perfect way
+# to do it its from the ~/.bash_profile file
+# just add / edit the PATH variable:
+
+PATH=$PATH:path_to_printer_files_dir
+
+# For the first time you mast do the next command in order to use the printer
+source ~/.bash_profile
+

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# While the printer enable
+while [ -f $1/enable ] 
+
+do
+	CurPrintCount=$(cat $1/PrintCount)
+	CurCount=$(cat $1/count)
+
+	if [ $CurPrintCount -lt $CurCount ] 
+	then
+		CurPrintCount=$(($CurPrintCount + 1))
+	
+		# Checking if the file have been deleted	
+		if [ -f $1/D$CurPrintCount ]
+		then
+			cat $1/D$CurPrintCount >> $1/log
+			echo "***********************" >> $1/log
+
+			# Get the sleeping time from the file line
+			SleepingTime=$(cat $1/D$CurPrintCount | wc -l)
+			sleep $SleepingTime
+		fi
+		
+		# Updating the printer count file
+		echo $CurPrintCount > $1/PrintCount
+
+	else
+		# In order do not making hard on the server
+		sleep 3
+	fi
+
+done
+

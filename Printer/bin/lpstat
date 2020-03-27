@@ -1,0 +1,55 @@
+#!/bin/bash
+
+ScriptPath=$(dirname $0)
+SpoolPath="${ScriptPath%???}spool"
+
+function DisplayPrinter ()
+{	
+	# If there is no input
+	if [ -z $1 ]
+	then
+		echo "You must enter printer name"
+	else
+		# Check if there are any files
+		if ls -l $SpoolPath/$1 | grep R
+		then
+	                printf "\n The printer name is $1 \n"
+
+        		# Displaying all of the printer work
+			cd $SpoolPath/$1
+	       		for work in R*
+  			do
+             			echo $work
+				cat $work
+				echo
+        		done
+		else
+			echo There is nothing to display for $1 printer
+
+		fi
+	fi
+}
+
+# Check wheter to run on all printers or just one
+if [ "$1" == "-all" ]
+then
+	# Going to the  printer dir
+	cd $SpoolPath
+	for printer in *
+	do
+		# Check if its not the softlink, we dont want to this twice
+		if [ ! -h $printer ]
+		then
+			# Sending to the display function the curr printer
+			DisplayPrinter $printer
+		fi
+	done
+else
+	# Check if the printer exist
+	if [ -d $SpoolPath/$1 ]
+	then
+		DisplayPrinter $1
+	else
+		echo We dont have such printer
+	fi
+fi

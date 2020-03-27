@@ -1,0 +1,102 @@
+#!/bin/bash
+
+ScriptPath=$(dirname $0)
+SpoolPath="${ScriptPath%???}spool"
+TampPath="${ScriptPath%???}tamplate"
+
+# Check that the user entered 2 argumants
+if [ $# -eq 1 ] 
+then
+	echo You entered only 1 input!
+
+elif  [ $# -gt 2 ]
+      then
+		echo You entered too many inputs
+else 
+
+	case $1 in
+
+		-add)
+			# Check if the printer name allready taken
+			if [ -d $SpoolPath/$2 ]
+			then
+				echo This printer allready exist
+			else
+				cp -r $TampPath  $SpoolPath/$2
+			fi
+
+		;;
+	
+		-del)
+			if [ -d $SpoolPath/$2 ]
+                        then
+                                rm -rf $SpoolPath/$2
+
+				# Checking if there is a soft link for defult
+                        	if [ -h $SpoolPath/default ]
+                        	then
+                                	if [ ! -e $SpoolPath/default ]
+                                	then
+                                        	unlink $SpoolPath/default
+                                	fi
+                        	fi
+
+			else
+				echo There is no such printer
+                        fi
+		;;
+	
+		-enable)
+			if [ -d $SpoolPath/$2 ]
+                        then
+
+				if [ ! -f $SpoolPath/$2/enable ]
+				then
+					touch $SpoolPath/$2/enable
+
+					# Sending the lpd command the directory of the enabled dir
+					lpd $SpoolPath/$2  &
+				else 
+					echo This printer allready enabled
+				fi
+			else
+				echo There is no such printer
+			fi
+		;;
+	
+		-disable)
+			if [ -d $SpoolPath/$2 ]
+                        then
+
+                                if [ -f $SpoolPath/$2/enable ]
+                                then
+					rm $SpoolPath/$2/enable
+				else
+					echo This printer not enabled
+				fi
+			else
+				echo There is no such printer
+                        fi
+		;;
+
+		-default)
+			# Check that we allready have this printer
+			if [ -d $SpoolPath/$2 ]
+			then
+				# Check i the sift link allready exists
+				if [ -h $SpoolPath/default ]
+				then
+					unlink $SpoolPath/default
+				fi
+
+				ln -s $SpoolPath/$2 $SpoolPath/default
+			else
+				echo We dont have such printer
+			fi
+		;;
+
+		*)
+	       		echo we dont have such command 
+		;;
+	esac
+fi

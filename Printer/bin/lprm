@@ -1,0 +1,57 @@
+#!/bin/bash
+
+ScriptPath=$(dirname $0)
+SpoolPath="${ScriptPath%???}spool"
+
+# Getting the first chracter
+FirstCharacter=`echo $1 | cut -c 1`
+
+DeleteFiles ()
+{
+	# In case the files exist
+	if [[ -f $SpoolPath/$1/R$2 && -f $SpoolPath/$1/D$2 ]]
+        then
+        	rm $SpoolPath/$1/R$2 $SpoolPath/$1/D$2
+	else        
+                echo There is no such files $2 to delete
+        fi
+
+}
+
+# Check if there is no argumant
+if [ $# -eq 0 ]
+then
+	echo You must enter a least 1 argumant
+else	
+	FirstCharacter=`echo $1 | cut -c 1`
+
+	# Checking what printer to activate
+	if [ $FirstCharacter == "-" ]
+	then
+		# Check that there is argumant for the file deletion
+		if [ $# -gt 1 ]
+		then
+
+			# Getting the printer name
+			printerName=`echo $1 | sed 's/^.//'`
+
+			if [ -d $SpoolPath/$printerName ]
+			then	
+				DeleteFiles $printerName $2
+			else
+				echo The printer not exsit
+			fi
+		else
+			echo You must enter file number to delete
+		fi
+
+	else
+		# Checking if there is a default printer
+		if [ -e $SpoolPath/default ]
+		then
+			DeleteFiles default $1
+		else
+			echo There is no default printer, use lpadmin -default printer_name to set one
+		fi
+	fi
+fi
