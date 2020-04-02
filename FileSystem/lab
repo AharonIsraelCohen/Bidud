@@ -15,6 +15,42 @@ function flagValidate ()
 	fi
 }
 
+function sizeValidate ()
+{
+        if flagValidate $1 $2 $3
+        then
+		if numValidate $4
+		then
+			return 0
+		else
+			echo the size has to be a number and bigger then 0
+	                return 1
+		fi
+        else
+		echo We could not recognized this $1 option..
+                return 1
+        fi
+}
+
+function pathValidate ()
+{
+	if flagValidate $1 $2 $3
+        then
+                if [ ! -d $4 ]
+                then
+                        return 0
+                else
+                        echo directory allready exist
+                        return 1
+                fi
+        else
+                echo We could not recognized this $1 option..
+                return 1
+        fi
+
+}
+
+
 function numValidate ()
 {
 	if [ $1 -gt 0 ] &> /dev/null
@@ -43,60 +79,81 @@ else
 	case $1 in
 
 		-c | --create)
-			if flagValidate $2 -s --size
-			then	
-				echo size
-				if numValidate $3
-				then
-					echo goot number
+			if  [ $# -gt 6 ]
+			then
+				if sizeValidate $2 -s --size $3
+				then	
 					if flagValidate $4 -v --vg
 					then
-						echo gooh vg
 						if vgValidate $5
 						then
-							echo gooood vg
-							if flagValidate $6 -p --path
+							if pathValidate $6 -p --path $7
 							then
-								if [ ! -d $7 ] 
+								mkdir -p $7
+								if flagValidate $8 --new-disk
 								then
-									mkdir -p $7
-									echo works
-									if flagValidate $8 --new-disk
-									then
-										echo '--new-disk'
-									else
-										echo regular
-									fi
+									echo '--new-disk'
 								else
-									echo directory allready exist
+									echo regular
 								fi
-							else
-								echo bad path
 							fi
 						else
 							echo we dont have such vg, this what we have
 							vgs
 						fi
-
 					else 
 						echo bad vg
 					fi
-				else 
-					echo the size has to be a number and bigger then 0
 				fi
 			else
-				echo not size
+				echo Not enough argumants
 			fi
-
 		;;
 	
 		-e | --extend)
-                        echo extend
+			if [ $# -lt 5 ]
+				if  [ $# -lt 7 ]
+				then
+        	                	if sizeValidate $2 -s --size $3
+                	        	then
+                        			if flagValidate $4 -p --path
+                                	        then
+							if [ -d $5 ]
+                                        		then
+                                        			#mkdir -p $5 send the old fileSystem to extand
+		                                                if flagValidate $6 --new-disk
+        		                                        then
+                		                                	echo '--new-disk'
+                        		                        else
+                                		                       	echo regular
+								fi
+                                        		else
+								echo The directory can not  be found
+							fi
+						else
+							echo $4 'is not an option, use --help..'
+                        	                fi
+                                	fi
+				else
+					echo Too many argumants
+                	        fi
+			else
+				echo Not enough argumants
+			fi
 		;;
 	
 		-r | --remove)
-			echo remove
-			
+			if  [ $# -lt 3 ]
+			then
+				if [ -d $5 ]	
+				then
+					echo ok
+				else
+					echo There is no file system in this path
+				fi
+			else
+				echo Too many argumants
+			fi
 		;;
 	
 		-h | --help)
