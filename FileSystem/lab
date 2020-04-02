@@ -1,0 +1,110 @@
+#!/bin/bash
+
+#ScriptPath=$(dirname $0)
+#SpoolPath="${ScriptPath%???}spool"
+#TampPath="${ScriptPath%???}tamplate"
+# Check that the user entered 2 argumants
+
+function flagValidate ()
+{
+	if [ $1 == $2 ] || [ $1 == $3 ] &> /dev/null
+	then
+		return 0
+	else 
+		return 1
+	fi
+}
+
+function numValidate ()
+{
+	if [ $1 -gt 0 ] &> /dev/null
+        then
+        	return 0
+        else
+		return 1
+        fi
+}
+
+function vgValidate ()
+{
+	echo validate vg
+	return 0
+}
+
+if [ $# -lt 2 ] 
+then
+	echo You messing some argumants, use --help to get explanation!
+
+elif  [ $# -gt 8 ]
+      then
+		echo You entered too many inputs, use --help to get explanation!
+else 
+
+	case $1 in
+
+		-c | --create)
+			if flagValidate $2 -s --size
+			then	
+				echo size
+				if numValidate $3
+				then
+					echo goot number
+					if flagValidate $4 -v --vg
+					then
+						echo gooh vg
+						if vgValidate $5
+						then
+							echo gooood vg
+							if flagValidate $6 -p --path
+							then
+								if [ ! -d $7 ] 
+								then
+									mkdir -p $7
+									echo works
+									if flagValidate $8 --new-disk
+									then
+										echo '--new-disk'
+									else
+										echo regular
+									fi
+								else
+									echo directory allready exist
+								fi
+							else
+								echo bad path
+							fi
+						else
+							echo we dont have such vg, this what we have
+							vgs
+						fi
+
+					else 
+						echo bad vg
+					fi
+				else 
+					echo the size has to be a number and bigger then 0
+				fi
+			else
+				echo not size
+			fi
+
+		;;
+	
+		-e | --extend)
+                        echo extend
+		;;
+	
+		-r | --remove)
+			echo remove
+			
+		;;
+	
+		-h | --help)
+                        echo help
+		;;
+
+		*)
+	       		echo we dont have such option
+		;;
+	esac
+fi
