@@ -7,7 +7,7 @@
 
 function flagValidate ()
 {
-	if [ $1 == $2 ] &> /dev/null || [ $1 == $3 ] &> /dev/null
+	if [ $1 == $2 ] || [ $1 == $3 ] &> /dev/null
 	then
 		return 0
 	else 
@@ -40,6 +40,7 @@ function pathValidate ()
                 then
                         return 0
                 else
+                        echo directory allready exist
                         return 1
                 fi
         else
@@ -62,22 +63,9 @@ function numValidate ()
 
 function vgValidate ()
 {
-	wantedVg=$(vgs |awk '{print$1}'| grep -w $1 2> /dev/null)
-	if [ "$wantedVg" == "$1" ] && [ ! -z "$1" ] 
-	then
-		return 0
-	else
-		return 1
-	fi
+	echo validate vg
+	return 0
 }
-
-function createFileSystem ()
-{
-	actualDisks=$(lshw -short -quiet| grep disk| grep sd| awk '{print$2}') #&> /dev/null
-	#echo $actualDisks
-
-}
-
 
 if [ $# -lt 2 ] 
 then
@@ -102,20 +90,15 @@ else
 							if pathValidate $6 -p --path $7
 							then
 								mkdir -p $7
+								if flagValidate $8 --new-disk
+								then
+									echo '--new-disk'
+								else
+									echo regular
+								fi
 							fi
-
-							if flagValidate $8 '--new-disk'
-                                                        then
-i                                                        	echo '--new-disk'
-								createFileSystem
-                                                        else
-                                                                echo regular
-								createFileSystem
-                                                        fi
-
 						else
-							echo we dont have such vg, this what we have:
-							echo
+							echo we dont have such vg, this what we have
 							vgs
 						fi
 					else 
