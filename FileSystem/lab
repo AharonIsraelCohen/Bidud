@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#ScriptPath=$(dirname $0)
+ScriptPath=$(dirname $0)
 #SpoolPath="${ScriptPath%???}spool"
 #TampPath="${ScriptPath%???}tamplate"
 # Check that the user entered 2 argumants
@@ -73,8 +73,57 @@ function vgValidate ()
 
 function createFileSystem ()
 {
-	actualDisks=$(lshw -short -quiet| grep disk| grep sd| awk '{print$2}') #&> /dev/null
+	#actualDisks=$(lshw -short -quiet| grep disk| grep sd| awk '{print$2}') #&> /dev/null
 	#echo $actualDisks
+
+	echo start with the creation 
+
+	if lvcreate -t -L $1M $2 &> /dev/null
+	then
+		echo i am innnnnnnnnnnnnnnnnnnnnnnnnn
+		lvName=$( echo $3 | sed 's+/+_+g')
+		echo $lvName
+		lvcreate -y -n $lvName -L $1M $2 &> /dev/null
+		mkfs.ext4 /dev/$2/$lvName &> /dev/null
+		uuid=$(blkid | grep $lvName | cut -f 2 -d " ")
+		echo "$uuid    $3    ext4    defaults    0    0" >> /etc/fstab
+	       	mount /dev/$2/$lvName
+	else
+		echo No more space on the vgs
+	fi
+
+}
+
+function addingNewDisk ()
+{
+	if lsblk | grep -w $1 &> /dev/null
+       	then
+	        echo $1 rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+       		echo $2
+
+		cat $ScriptPath/fdiskParameter | fdisk -c /dev/$1 &> /dev/null 
+		pvcreate /dev/$15 &> /dev/null
+		vgextend /dev/$2 /dev/$15 &> /dev/null	
+	else
+	       	echo We can not find the disk $1
+		exit 0
+	fi
+}
+
+function extendFileSystem ()
+{
+	echo The size $1 
+        echo The lv full name $2
+
+        echo start with the extendtion
+
+        if lvextend -t -L +$1M $2 &> /dev/null
+        then
+		lvextend -L +$1M $2 &> /dev/null
+		resize2fs $2
+        else
+                echo No more space on the vgs
+        fi
 
 }
 
@@ -83,7 +132,7 @@ if [ $# -lt 2 ]
 then
 	echo You messing some argumants, use --help to get explanation!
 
-elif  [ $# -gt 8 ]
+elif  [ $# -gt 9 ]
       then
 		echo You entered too many inputs, use --help to get explanation!
 else 
@@ -91,35 +140,56 @@ else
 	case $1 in
 
 		-c | --create)
+			#echo we in the create option
 			if  [ $# -gt 6 ]
 			then
+				#echo we have enoufh arguants
 				if sizeValidate $2 -s --size $3
-				then	
+				then
+					#echo the size option and size is ok
 					if flagValidate $4 -v --vg
 					then
+						#echo the vg option is ok
 						if vgValidate $5
+							#echo we have this vg
 						then
-							if pathValidate $6 -p --path $7
+							if flagValidate $6 -p --path
 							then
-								mkdir -p $7
+								#echo the flag is good
+								if [ ! -d $7 ]
+								then
+									#echo the dir not exist
+									mkdir -p $7
+								else
+									dirSize=$(du -sh /sizedir/ | cut -c 1-4)
+									if [ "$dirSize" != "4.0K" ] 
+									then 
+										echo the directory is not empty
+										exit 0
+									fi
+								fi
+
+								if flagValidate $8 '--new-disk'
+                                                                then
+									if [ -z $9 ]
+									then
+										echo You must ener the disk name
+										exit 0
+									else
+                                                        	        	addingNewDisk $9 $5
+									fi
+                                                                fi
+                                                                        createFileSystem $3 $5 $7
+							else
+								echo we dont have this $6 
 							fi
-
-							if flagValidate $8 '--new-disk'
-                                                        then
-i                                                        	echo '--new-disk'
-								createFileSystem
-                                                        else
-                                                                echo regular
-								createFileSystem
-                                                        fi
-
 						else
 							echo we dont have such vg, this what we have:
 							echo
 							vgs
 						fi
 					else 
-						echo bad vg
+						echo We dont have such vg option
 					fi
 				fi
 			else
@@ -128,9 +198,9 @@ i                                                        	echo '--new-disk'
 		;;
 	
 		-e | --extend)
-			if [ $# -lt 5 ]
+			if [ $# -gt 4 ]
 			then
-				if  [ $# -lt 7 ]
+				if  [ $# -lt 8 ]
 				then
         	                	if sizeValidate $2 -s --size $3
                 	        	then
@@ -138,13 +208,22 @@ i                                                        	echo '--new-disk'
                                 	        then
 							if [ -d $5 ]
                                         		then
-                                        			#mkdir -p $5 send the old fileSystem to extand
-		                                                if flagValidate $6 --new-disk
+								currLv=$(df -h | grep -w $5 | awk '{print$1}')
+								currVg=$(echo $currLv | cut -f 1 -d "-" | cut -f 4 -d "/")
+
+		                                                if flagValidate $6 '--new-disk'
         		                                        then
-                		                                	echo '--new-disk'
-                        		                        else
-                                		                       	echo regular
+                		                                	if [ -z $7 ]
+                                                                        then
+                                                                                echo You must ener the disk name
+                                                                                exit 0
+                                                                        else
+                                                                                addingNewDisk $7 $currVg
+                                                                        fi
 								fi
+
+								extendFileSystem $3 $currLv
+
                                         		else
 								echo The directory can not  be found
 							fi
@@ -161,16 +240,39 @@ i                                                        	echo '--new-disk'
 		;;
 	
 		-r | --remove)
-			if  [ $# -lt 3 ]
+			if  [ $# -gt 2 ]
 			then
-				if [ -d $5 ]	
+				if [ $# -lt 4 ]
 				then
-					echo ok
+					if flagValidate $2 -p --path
+                                        then
+						if [ -d $3 ]	
+						then
+							lvName=$( echo $3 | sed 's+/+_+g')
+							lvFullPath=$(df -h | grep -w $lvName | awk '{print$1}')
+							echo $lvFullPath
+							#lvName=$(echo $lvFullPath | cut -f 2 -d "-")
+							echo $lvName
+							umount $lvFullPath
+							uuid=$(blkid | grep $lvName | cut -f 2 -d " " | cut -f 2 -d "=")
+							
+							echo $uuid
+							#cat /etc/fstab | grep $uuid
+							sed -i "/$uuid/d" /etc/fstab
+							lvremove -y $lvFullPath
+							#echo The filesystem is gone, but the directory exist..
+#							cat /etc/fstab
+						else
+							echo There is no file system in this path
+						fi
+					else
+						echo $2 'is not an option, use --help..'
+					fi
 				else
-					echo There is no file system in this path
+					echo Too many argumants
 				fi
 			else
-				echo Too many argumants
+				echo You missing some argumants
 			fi
 		;;
 	
