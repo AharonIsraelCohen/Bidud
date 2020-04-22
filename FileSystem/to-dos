@@ -1,0 +1,5 @@
+1. fix --help
+2. change parameter check
+3. create function that offers vgs with the requested size free
+4. change if path check order
+5. add EOF instead of fdiskParameter file
