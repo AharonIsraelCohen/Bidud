@@ -33,6 +33,41 @@ function sizeValidate ()
         fi
 }
 
+function vgFreeSpace ()
+{
+	echo The size you want to check is $1
+	vgCount=$(vgs | wc -l)
+	if [ $vgCount  -eq 0 ]
+	then
+		echo We dont have any vgs at all..
+	else
+		vgList=$(vgs | awk 'NR!=1 {print$1}')
+		echo The vgs list is:
+	        echo $vgList
+		vgMessage=true
+		vgGoodList=""
+
+		for vg in $vgList
+		do
+			echo The current vg is $vg
+			if lvcreate -t -L $1M $vg &> /dev/null
+			then
+				vgMessage=false
+				vgGoodList="$vgGoodList $vg"
+			fi
+		done
+
+		if $vgMessage
+		then
+			echo Oops we dont have any vgs with enough space for you
+		else
+			echo This is the list of the vgs with enough space for you:
+			echo $vgGoodList
+		fi
+        fi
+}
+
+
 function vgValidate ()
 {
 	#wantedVg=$(vgs |awk '{print$1}'| grep -w $1 2> /dev/null)
@@ -40,9 +75,8 @@ function vgValidate ()
 	then
 		return 0
 	else
-		echo  We dont have such vg, this what we have:
-                echo
-                vgs
+		echo  We dont have $1  vg
+                vgFreeSpace $2
 		return 1
 	fi
 }
@@ -53,7 +87,7 @@ function addNewDisk ()
         if lsblk | grep -w $1 &> /dev/null
         then
 		# Prapering the disk for LVM use, with file with the parameters
-                cat $ScriptPath/fdiskParameter | fdisk -c /dev/$1 &> /dev/null
+		echo -e "n\n e\n \n \n \n n \n \n \n w" | fdisk -c /dev/$1 &> /dev/null
 
 		# Creating pv from the new disk choosing 5 because this is the number of the logic volume in a new disk
                 pvcreate /dev/$15 &> /dev/null
@@ -93,7 +127,8 @@ function createFileSystem ()
 		echo "$uuid    $3    ext4    defaults    0    0" >> /etc/fstab
 	       	mount /dev/$2/$lvName
 	else
-		echo No more space on the vgs
+		echo Not enough space on vg $2
+		vgFreeSpace $1
 	fi
 
 }
@@ -106,173 +141,169 @@ function extendFileSystem ()
 		lvextend -L +$1M $2 &> /dev/null
 		resize2fs $2 &> /dev/null 
         else
-                echo No more space on the vgs
+                echo Not enough space on vg $2
+                vgFreeSpace $1
         fi
 }
 
-if [ $# -lt 2 ] 
-then
-	echo You messing some argumants, use --help to get explanation!
-elif  [ $# -gt 9 ]
-then
-	echo You entered too many inputs, use --help to get explanation!
-else 
+#if [ $# -lt 2 ] 
+#then
+#	echo You messing some argumants, use --help to get explanation!
+#elif  [ $# -gt 9 ]
+#then
+#	echo You entered too many inputs, use --help to get explanation!
+#else 
 	case $1 in
 
 		-c | --create)
-			if  [ $# -gt 6 ]
+                   	if sizeValidate $2 -s --size $3
 			then
-				if sizeValidate $2 -s --size $3
+				if flagValidate $4 -v --vg
 				then
-					if flagValidate $4 -v --vg
+					if vgValidate $5 $3
 					then
-						if vgValidate $5
+						if flagValidate $6 -p --path
 						then
-							if flagValidate $6 -p --path
+							if [ ! -z $7 ]
 							then
 								if [ ! -d $7 ]
-								then
-									mkdir -p $7
-								else
-									if [ ! -z $7 ]
-									then
-
-										# Check if the dir size bigger then 4 kb(an a ampty dir size)
-										dirSize=$( du -sh $7 | cut -c 1-4 )
+		                                                then
+               			                                        mkdir -p $7
+                               	                                else
+									# Check if the dir size bigger then 4 kb(an a ampty dir size)
+									dirFiles=$( ls -la | wc -l )
+									echo $dirFiles
 	
-										if [ "$dirSize" != "4.0K" ] 
-										then 
-											echo The directory is not empty
-											exit 0
-										fi
-									else
-										echo You mast enter a path name
+									if [ $dirFiles -gt 3 ] 
+									then 
+										echo The directory is not empty
 										exit 0
 									fi
 								fi
+							else
+								echo You mast enter a path name
+								exit 0
+							fi
 
-								# In case there is flag for new disk
-								if [ ! -z $8 ]
-								then
-									if flagValidate $8 '--new-disk'
-	                                                                then
-										# Checking if there is any disk name
-										if [ -z $9 ]
-										then
-											echo You must enter the disk name
-											exit 0
-										else
-                                                	        	        	addNewDisk $9 $5
-											createFileSystem $3 $5 $7
-										fi
-                                                                	fi
-                                                                else
-									createFileSystem $3 $5 $7
-								fi
+							# In case there is flag for new disk
+							if [ ! -z $8 ]
+							then
+								if flagValidate $8 '--new-disk'
+	                                                        then
+									# Checking if there is any disk name
+									if [ -z $9 ]
+									then
+										echo You must enter the disk name
+										exit 0
+									else
+                                               	        	        	addNewDisk $9 $5
+										createFileSystem $3 $5 $7
+									fi
+                                                               	fi
+                                                        else
+								createFileSystem $3 $5 $7
 							fi
 						fi
 					fi
 				fi
-			else
-				echo Not enough argumants for $1 option, use --help to get info
 			fi
 		;;
 	
 		-e | --extend)
-			if [ $# -gt 4 ]
-			then
-				if  [ $# -lt 8 ]
-				then
-        	                	if sizeValidate $2 -s --size $3
-                	        	then
-                        			if flagValidate $4 -p --path
-                                	        then
-							if [ -d $5 ] && [ ! -z $5 ]
-	                                       		then
-								lvName=$(lvNameHandle $5)
-								currLv=$(df -h | grep -w $lvName | awk '{print$1}')
+        		   if sizeValidate $2 -s --size $3
+              	           then
+                    	   	if flagValidate $4 -p --path
+                             	then
+					if [ -d $5 ] && [ ! -z $5 ]
+	                                then
+						lvName=$(lvNameHandle $5)
+						currLv=$(df -h | grep -w $lvName | awk '{print$1}')
 
-								# Check that the path is fileSystem
-								if [ -z $currLv ]
-								then
-									echo We dont have any file system in $5 location
-									exit 0
-								fi
+						# Check that the path is fileSystem
+						if [ -z $currLv ]
+						then
+							echo We dont have any file system in $5 location
+							exit 0
+						fi
 
-								currVg=$(echo $currLv | cut -f 1 -d "-" | cut -f 4 -d "/")
+						currVg=$(echo $currLv | cut -f 1 -d "-" | cut -f 4 -d "/")
 
-								# In case there is flag for new disk
-								if [ ! -z $6 ] 
-								then
-			                                                if flagValidate $6 '--new-disk'
-        			                                        then
-                			                                	if [ -z $7 ]
-                        	                                                then
-                                	                                                echo You must ener the disk name
-                                        	                                        exit 0
-                                                	                        else
-                                                        	                        addNewDisk $7 $currVg
-											extendFileSystem $3 $currLv
-                                                                	        fi
-									fi
-								else
+						# In case there is flag for new disk
+						if [ ! -z $6 ] 
+						then
+	                                                if flagValidate $6 '--new-disk'
+       		                                        then
+             			                                if [ -z $7 ]
+                        	                                then
+                                	                        	echo You must ener the disk name
+                                        	                        exit 0
+                                                	        else
+                                         	                       addNewDisk $7 $currVg
 									extendFileSystem $3 $currLv
-								fi
-
-                                        		else
-								echo The directory can not be found
+                                                             	fi
 							fi
-                        	                fi
-                                	fi
-				else
-					echo Too many argumants
-                	        fi
-			else
-				echo Not enough argumants
-			fi
+						else
+							extendFileSystem $3 $currLv
+						fi
+                                       	else
+						echo The directory can not be found
+					fi
+                                 fi
+                          fi
 		;;
 	
 		-r | --remove)
-			if  [ $# -gt 2 ]
-			then
-				if [ $# -lt 4 ]
+			if flagValidate $2 -p --path
+                        then
+				if [ -d $3 ] && [ ! -z $3 ]
 				then
-					if flagValidate $2 -p --path
+					lvName=$(lvNameHandle $3)
+					currlv=$(df -h | grep -w $lvName | awk '{print$1}')
+
+					# Check that the path is fileSystem
+					if [ -z $currlv ]
                                         then
-						if [ -d $3 ] && [ ! -z $3 ]
-						then
-							lvName=$(lvNameHandle $3)
-							currlv=$(df -h | grep -w $lvName | awk '{print$1}')
+     	                                	echo We dont have any file system in $3 location
+                                                exit 0
+                                        fi
 
-							# Check that the path is fileSystem
-							if [ -z $currlv ]
-                                                        then
-                                                                        echo We dont have any file system in $3 location
-                                                                        exit 0
-                                                        fi
-
-							umount $currlv
-							uuid=$(blkid | grep $lvName | cut -f 2 -d " " | cut -f 2 -d "=")
-							sed -i "/$uuid/d" /etc/fstab
-							lvremove -y $currlv
-						else
-							echo There is no file system in this path
-						fi
-					fi
+					umount $currlv
+					uuid=$(blkid | grep $lvName | cut -f 2 -d " " | cut -f 2 -d "=")
+					sed -i "/$uuid/d" /etc/fstab
+					lvremove -y $currlv
 				else
-					echo Too many argumants
+					echo There is no file system in this path
 				fi
-			else
-				echo You missing some argumants
 			fi
 		;;
 	
 		-h | --help)
-                        echo help
+			echo
+                        echo " Wellcome to the FileSystem creator."
+			echo " Flags and their use:"
+			echo
+			echo "-s / --size = The FileSystem size, dont add letters to the number ( like M or G )"
+		       	echo " The size is in MEGABYTES, so if you want 1G, just type 1000."
+			echo
+			echo '-v / --vg = The vg name that we will create lv from, you can see the vg list by typing the "vgs" command'
+			echo
+			echo "-p / --path = the path where you want the FileSystem to be, this place must be empty." 
+		        echo " You dont have to create the directory."
+			echo
+			echo "--new-disk = This flag is used to add a new disk to the vg where your FileSystem his comming from."
+			echo " Just type the disk name, not full path, This flag his optional and must be at the end."
+		       	echo	
+			echo "-c = The flag for creating new FileSystem, must contain othere flags and in a specific order"
+			echo "-s / --size <SIZE_NUMBER> -v / --vg <VG_NAME> -p / --path <PATH> --newdisk(optinal) <DISK_NAME>"
+			echo
+			echo "-e = The flag for extanding existing FileSystem, must contain othere flags and in a specific order"
+                        echo "-s / --size <SIZE_NUMBER> -p / --path <PATH> --newdisk(optinal) <DISK_NAME>"
+			echo
+			echo '-r = The flag for deleting FileSystem, must contain the -p / --path flag too.'
 		;;
 
 		*)
-	       		echo we dont have such option
+	       		echo we dont have this $1 option
 		;;
 	esac
-fi
+#fi
